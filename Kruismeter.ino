@@ -1,5 +1,8 @@
+// V1.0 2014/06/10  Initial number
+
 #include <TFT_eSPI.h> // Hardware-specific library
 #include <SPI.h>
+#include "esp_adc_cal.h"
 
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite sprite = TFT_eSprite(&tft);
@@ -29,6 +32,9 @@ int degRef[]  = {0, 6, 13, 19, 25, 31, 37, 41, 45, 47, 49, 52, 55, 57, 60};
 int valRef[]  = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 100};
 bool shwRef[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1};
 
+int fwdList[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int refList[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
 
 int bckColor = TFT_BLACK;
 int txtColor = TFT_WHITE;
@@ -37,6 +43,7 @@ int lastFwd = 0;
 int lastRef = 0;
 int peakFwd = 0;
 long peakTime = millis();
+//uint16_t* tft_buffer;
 
 typedef struct {  // Frequency parts
   float x1;
@@ -82,19 +89,47 @@ void setup(void) {
 
   sprite.pushSprite(0, 0);
   tft.setTextColor(txtColor, bckColor);   
+  // tft_buffer =  (uint16_t*) malloc( ((100) + 2) * ((100) + 2) * 2 );
+  // tft.readRect(25,25,100,100,tft_buffer);
+  // tft.pushRect(50,50,100,100,tft_buffer);
+  
+  //for (;;){}
+  analogReadResolution(12);
 }
 
 void loop() {
-    int fwd = analogRead(fwdPin)/14;
-    int ref = analogRead(refPin)/14;
+    // int fwd = analogRead(fwdPin)*3300/4095;
+    // int ref = analogRead(refPin)*3300/4095;    
+    int fwd =analogReadMilliVolts(fwdPin)-128;
+    int ref = analogReadMilliVolts(refPin)-128;
+    Serial.printf("Fwd:%d - Ref:%d\r\n",fwd,ref);
+    fwd = calcAverage(true, fwd);
+    ref = calcAverage(false, ref);    
     DrawMeter(fwd, ref);
-    delay(100);
+    delay(10);
+}
+
+int calcAverage(bool forward, int measure){
+  measure /=10;
+  int retVal = 0;
+  if (forward){
+      for (int x = 0; x<9; x++) fwdList[x] = fwdList[x + 1];
+      fwdList[9] = measure;
+      for (int x = 0; x<10; x++) retVal += fwdList[x];
+  } else {
+      for (int x = 0; x<9; x++) refList[x] = refList[x + 1];
+      refList[9] = measure;
+      for (int x = 0; x<10; x++) retVal += refList[x];
+  }
+  return retVal/10;
 }
 
 void DrawMeter(int fwd, int ref){
+
   bool peakChanged = false;
-  if (peakTime+3000<millis()){
+  if (peakTime+3000<millis() && fwd<peakFwd){
     peakFwd = 0;
+    peakTime = millis();
     peakChanged = true;
   }
   if (fwd>peakFwd){
@@ -102,7 +137,10 @@ void DrawMeter(int fwd, int ref){
     peakTime = millis();
     peakChanged = true;
   }
+  Serial.printf("fwd = %d (%d), ref = %d (%d), peak = %d (%d, %d)\r\n", fwd, lastFwd, ref, lastRef , fwd, peakFwd, peakChanged);
+
   if (fwd>lastFwd+1 || fwd<lastFwd-1|| ref>lastRef+1 || ref<lastRef-1 || peakChanged){
+    Serial.print(".");
     lastFwd = fwd;
     lastRef = ref;
     sprite.pushSprite(0, 0);
@@ -112,7 +150,6 @@ void DrawMeter(int fwd, int ref){
     float swr = (1 + sqrt(ref/float(fwd)))/(1 - sqrt(ref/float(fwd)));
     swr = round(swr*10)/10;
 
-    Serial.printf("fwd = %d, ref = %d\r\n", fwd, ref);
     tft.drawString("PWR : " + String(fwd)+'W', 15, 37, 2);     
     tft.drawString("PEAK: " + String(peakFwd)+'W', 15, 52, 2); 
     tft.drawString("PWR : " + String(ref)+'W', 230, 37, 2);  
