@@ -1,11 +1,13 @@
-// V1.0 2014/06/10  Initial number
+// V1.1 2024/06/21  Dual scale
+// V1.0 2024/06/10  Initial number
 
 #include <TFT_eSPI.h> // Hardware-specific library
 #include <SPI.h>
 #include "esp_adc_cal.h"
 
 TFT_eSPI tft = TFT_eSPI();
-TFT_eSprite sprite = TFT_eSprite(&tft);
+TFT_eSprite spriteHigh = TFT_eSprite(&tft);
+TFT_eSprite spriteLow  = TFT_eSprite(&tft);
 
 #define TFT_GREY 0x5AEB
 #define DEG2RAD  0.0174532925
@@ -24,17 +26,24 @@ TFT_eSprite sprite = TFT_eSprite(&tft);
 // int valRef[]  = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 70, 80, 90, 100};
 // bool shwRef[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1};
 
-int degFwd[]  = {0, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60};
+int degFwd[]  = {0, 3, 5,  7,  9,  11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41,  43,  45,  47,  48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60};
 int valFwd[]  = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 240, 260, 280, 300};
-bool shwFwd[] = {1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1};
+bool shwFwd[] = {1, 1, 1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,   0,   0,   0,   0,   1,   0,   0,   0,   0,   1,   0,   0,   0,   0,   0,   1};
 
 int degRef[]  = {0, 6, 13, 19, 25, 31, 37, 41, 45, 47, 49, 52, 55, 57, 60};
 int valRef[]  = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 100};
 bool shwRef[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1};
 
+int degFwdLow[]  = {0, 5,  9,  13, 17, 21, 25, 29, 33, 37, 41, 43, 45, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60};
+int valFwdLow[]  = {0, 1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 26, 28, 30};
+bool shwFwdLow[] = {1, 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  1,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  1};
+
+int degRefLow[]  = {0, 13, 25, 37, 45, 49, 52, 55, 57, 60};
+int valRefLow[]  = {0, 1,  2,  3,  4,  5,  6,  7,  8,  10};
+bool shwRefLow[] = {1, 1,  1,  1,  1,  1,  1,  1,  1,  1};
+
 int fwdList[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 int refList[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
 
 int bckColor = TFT_BLACK;
 int txtColor = TFT_WHITE;
@@ -43,6 +52,7 @@ int lastFwd = 0;
 int lastRef = 0;
 int peakFwd = 0;
 long peakTime = millis();
+long lastHigh = millis();
 //uint16_t* tft_buffer;
 
 typedef struct {  // Frequency parts
@@ -70,47 +80,46 @@ void setup(void) {
   tft.init();
   tft.setRotation(3);
 
-  createSprite();
-  sprite.pushSprite(0, 0);
-
+  createspriteHigh();
+  createspriteLow();
+  spriteLow.pushSprite(0, 0);
   delay(1000);
+  spriteHigh.pushSprite(0, 0);
+  delay(1000);
+
   for (int i = 0; i <= 300; i += 15){
-    sprite.pushSprite(0, 0);
-    DrawMeter(i, i/3);
+    DrawMeter(i, i/3, i>=30);
     delay(100);
   }
 
   delay(1000);
   for (int i = 300; i >= 0; i -= 15){
-    sprite.pushSprite(0, 0);
-    DrawMeter(i, i/3);
+    DrawMeter(i, i/3, i>=30);
     delay(100);    
   }
 
-  sprite.pushSprite(0, 0);
+  spriteHigh.pushSprite(0, 0);
   tft.setTextColor(txtColor, bckColor);   
-  // tft_buffer =  (uint16_t*) malloc( ((100) + 2) * ((100) + 2) * 2 );
-  // tft.readRect(25,25,100,100,tft_buffer);
-  // tft.pushRect(50,50,100,100,tft_buffer);
-  
-  //for (;;){}
   analogReadResolution(12);
 }
 
 void loop() {
+    int fwd = analogRead(fwdPin);
+    int ref = analogRead(refPin);    
     // int fwd = analogRead(fwdPin)*3300/4095;
-    // int ref = analogRead(refPin)*3300/4095;    
-    int fwd =analogReadMilliVolts(fwdPin)-128;
-    int ref = analogReadMilliVolts(refPin)-128;
+    // int ref = analogRead(refPin)*3300/4095; 
+    // int fwd =analogReadMilliVolts(fwdPin)-128;
+    // int ref = analogReadMilliVolts(refPin)-128;
+    // ref /=3;
     Serial.printf("Fwd:%d - Ref:%d\r\n",fwd,ref);
     fwd = calcAverage(true, fwd);
     ref = calcAverage(false, ref);    
-    DrawMeter(fwd, ref);
+    DrawMeter(fwd, ref, (fwd>25 || ref>8));
     delay(10);
 }
 
 int calcAverage(bool forward, int measure){
-  measure /=10;
+  measure /=13;
   int retVal = 0;
   if (forward){
       for (int x = 0; x<9; x++) fwdList[x] = fwdList[x + 1];
@@ -124,7 +133,9 @@ int calcAverage(bool forward, int measure){
   return retVal/10;
 }
 
-void DrawMeter(int fwd, int ref){
+void DrawMeter(int fwd, int ref, bool isHigh){
+  if (isHigh) lastHigh = millis();
+  if (!isHigh && millis()-lastHigh<3000) isHigh = true;
 
   bool peakChanged = false;
   if (peakTime+3000<millis() && fwd<peakFwd){
@@ -143,9 +154,12 @@ void DrawMeter(int fwd, int ref){
     Serial.print(".");
     lastFwd = fwd;
     lastRef = ref;
-    sprite.pushSprite(0, 0);
-    calcLine(320, 305, 285, 61, 310, fwd, TFT_BLACK, true, true, false);
-    calcLine(0, 305, 14, 61, 310, ref, TFT_BLACK, false, true, false);
+    if (isHigh)
+      spriteHigh.pushSprite(0, 0);
+    else       
+      spriteLow.pushSprite(0, 0);
+    calcLine(320, 305, 285, 61, 310, fwd, TFT_BLACK, true, true, false, isHigh);
+    calcLine(0, 305, 14, 61, 310, ref, TFT_BLACK, false, true, false, isHigh);
 
     float swr = (1 + sqrt(ref/float(fwd)))/(1 - sqrt(ref/float(fwd)));
     swr = round(swr*10)/10;
@@ -164,13 +178,17 @@ void DrawMeter(int fwd, int ref){
 }
 
 void drawSWRLine(int fwd, int ref, unsigned int color, int linePart){
-  calcLine(320, 305, 285, 61, 300, fwd, color, true, false, linePart == 1?true:false);
-  calcLine(0, 305, 14, 61, 300, ref, color, false, false, linePart == 1?true:false);
+  calcLine(320, 305, 285, 61, 300, fwd, color, true, false, linePart == 1?true:false, true);
+  calcLine(0, 305, 14, 61, 300, ref, color, false, false, linePart == 1?true:false, true);
 }
 
-void calcLine(int x1, int y1, int start_angle, int sub_angle, int r, int measure, unsigned int color, bool forward, bool doDraw, bool drawReverse){
+void calcLine(int x1, int y1, int start_angle, int sub_angle, int r, int measure, unsigned int color, bool forward, bool doDraw, bool drawReverse, bool isHigh){
   if (forward){
-    int lIndex = lookUpDeg(degFwd, valFwd, sizeof(valFwd)/sizeof(valFwd[0]), measure);
+    int lIndex=0;
+    if (isHigh)
+      lIndex = lookUpDeg(degFwd, valFwd, sizeof(valFwd)/sizeof(valFwd[0]), measure);
+    else
+      lIndex = lookUpDeg(degFwdLow, valFwdLow, sizeof(valFwdLow)/sizeof(valFwdLow[0]), measure);  
     float sx = cos((start_angle + lIndex - 90) * DEG2RAD);
     float sy = sin((start_angle + lIndex - 90) * DEG2RAD);
     int x2 = sx * r + x1;
@@ -185,7 +203,11 @@ void calcLine(int x1, int y1, int start_angle, int sub_angle, int r, int measure
       aPos.y2 = y2;
     }
   } else {
-    int lIndex = lookUpDeg(degRef, valRef, sizeof(valRef)/sizeof(valRef[0]), measure);
+    int lIndex=0;
+    if (isHigh)
+      lIndex = lookUpDeg(degRef, valRef, sizeof(valRef)/sizeof(valRef[0]), measure);
+    else
+      lIndex = lookUpDeg(degRefLow, valRefLow, sizeof(valRefLow)/sizeof(valRefLow[0]), measure);      
     float sx = cos((start_angle + sub_angle - lIndex - 90) * DEG2RAD);
     float sy = sin((start_angle + sub_angle - lIndex - 90) * DEG2RAD);
     int x2 = sx * r + x1;
@@ -200,10 +222,10 @@ void calcLine(int x1, int y1, int start_angle, int sub_angle, int r, int measure
       calcCross();
       if (lPos.x1>0 && lPos.y1>0){
         Serial.printf("DrawLine: %d, %d, %d, %d\r\n", lPos.x, lPos.y, aPos.x, aPos.y);
-        sprite.drawLine(lPos.x, lPos.y, aPos.x, aPos.y, color);
+        spriteHigh.drawLine(lPos.x, lPos.y, aPos.x, aPos.y, color);
         if (drawReverse){
           Serial.printf("DrawReverse: %d, %d, %d, %d\r\n", lPos.x, lPos.y, aPos.x-lPos.x, aPos.y-lPos.y);
-          sprite.drawLine(lPos.x, lPos.y, 2*lPos.x-aPos.x, 2*lPos.y-aPos.y, color);
+          spriteHigh.drawLine(lPos.x, lPos.y, 2*lPos.x-aPos.x, 2*lPos.y-aPos.y, color);
         }
       }
     }
@@ -243,7 +265,7 @@ int lookUpDeg(int deg[], int val[], int elements, int measure){
   return int(round(retDeg));
 }
 
-int drawSegment(int x, int y, int start_angle, int sub_angle, int r, unsigned int color, bool forward, bool withValues){
+int drawSegment(int x, int y, int start_angle, int sub_angle, int r, unsigned int color, bool isHigh, bool forward, bool withValues){
   float sx = 0;
   float sy = 0;
   int lIndex = 0;
@@ -263,8 +285,15 @@ int drawSegment(int x, int y, int start_angle, int sub_angle, int r, unsigned in
       int x2 = cos((i + 1 - 90) * DEG2RAD) * r + x;
       int y2 = sin((i + 1 - 90) * DEG2RAD) * r + y;
 
-      sprite.drawLine(x1, y1, x2, y2, color);
-      lIndex = lookUp(degFwd, sizeof(degFwd)/sizeof(degFwd[0]),  i-start_angle);
+      if (isHigh){
+        spriteHigh.drawLine(x1, y1, x2, y2, color);
+        lIndex = lookUp(degFwd, sizeof(degFwd)/sizeof(degFwd[0]),  i-start_angle);
+      }
+      else  
+      {
+        spriteLow.drawLine(x1, y1, x2, y2, color); 
+        lIndex = lookUp(degFwdLow, sizeof(degFwdLow)/sizeof(degFwdLow[0]),  i-start_angle);
+      }
 
       if (withValues && lIndex>= 0){
         int x3 = cos((i - 90) * DEG2RAD) * r + x;
@@ -272,9 +301,16 @@ int drawSegment(int x, int y, int start_angle, int sub_angle, int r, unsigned in
 
         int x4 = cos((i - 90) * DEG2RAD) * (r + (shwFwd[lIndex]?8:4)) + x;
         int y4 = sin((i - 90) * DEG2RAD) * (r + (shwFwd[lIndex]?8:4)) + y;
-        sprite.drawLine(x3, y3, x4, y4, color);
-        sprite.setTextColor(TFT_GREEN, bckColor);
-        if (shwFwd[lIndex]) sprite.drawCentreString(String(valFwd[lIndex]), x4-10, y4-4, 1);
+        if (isHigh){
+          spriteHigh.drawLine(x3, y3, x4, y4, color);
+          spriteHigh.setTextColor(TFT_GREEN, bckColor);
+          if (shwFwd[lIndex]) spriteHigh.drawCentreString(String(valFwd[lIndex]), x4-10, y4-4, 1);
+        } else {
+          spriteLow.drawLine(x3, y3, x4, y4, color);
+          spriteLow.setTextColor(TFT_GREEN, bckColor);
+          if (shwFwdLow[lIndex]) spriteLow.drawCentreString(String(valFwdLow[lIndex]), x4-10, y4-4, 1);
+        }
+
       }
 
       x1 = x2;
@@ -287,8 +323,15 @@ int drawSegment(int x, int y, int start_angle, int sub_angle, int r, unsigned in
       int y2 = sin((i - 1 - 90) * DEG2RAD) * r + y;
       Serial.printf(" i = %d - x = %d, %d - y = %d, %d\r\n", i, x1, x2, y1, y2);
 
-      sprite.drawLine(x1, y1, x2, y2, color);
-      lIndex = lookUp(degRef, sizeof(degRef)/sizeof(degRef[0]), start_angle+sub_angle-i);
+      if (isHigh){
+        spriteHigh.drawLine(x1, y1, x2, y2, color);
+        lIndex = lookUp(degRef, sizeof(degRef)/sizeof(degRef[0]), start_angle+sub_angle-i);
+      }
+      else  
+      {
+        spriteLow.drawLine(x1, y1, x2, y2, color); 
+        lIndex = lookUp(degRefLow, sizeof(degRefLow)/sizeof(degRefLow[0]), start_angle+sub_angle-i);
+      }
 
       if (withValues && lIndex>= 0){
         int x3 = cos((i - 90) * DEG2RAD) * r + x;
@@ -296,9 +339,15 @@ int drawSegment(int x, int y, int start_angle, int sub_angle, int r, unsigned in
 
         int x4 = cos((i - 90) * DEG2RAD) * (r + (shwRef[lIndex]?8:4)) + x;
         int y4 = sin((i - 90) * DEG2RAD) * (r + (shwRef[lIndex]?8:4)) + y;
-        sprite.drawLine(x3, y3, x4, y4, color);
-        sprite.setTextColor(TFT_RED, bckColor);
-        if (shwRef[lIndex]) sprite.drawCentreString(String(valRef[lIndex]), x4+10, y4-4, 1);
+        if (isHigh) {
+          spriteHigh.drawLine(x3, y3, x4, y4, color);
+          spriteHigh.setTextColor(TFT_RED, bckColor);
+          if (shwRef[lIndex]) spriteHigh.drawCentreString(String(valRef[lIndex]), x4+10, y4-4, 1);
+        } else {
+          spriteLow.drawLine(x3, y3, x4, y4, color);
+          spriteLow.setTextColor(TFT_RED, bckColor);
+          if (shwRefLow[lIndex]) spriteLow.drawCentreString(String(valRefLow[lIndex]), x4+10, y4-4, 1);
+        }
       }
 
       x1 = x2;
@@ -318,14 +367,14 @@ int lookUp(int deg[], int elements, int wantedval){
   return wantedpos;
 }
 
-void createSprite(){
-    sprite.setColorDepth(8);
-  sprite.createSprite(320, 240);
-  sprite.fillRect(0, 0, 320, 240, TFT_GREY);
-  sprite.fillRect(3, 3, 314, 234, bckColor);
+void createspriteHigh(){
+  spriteHigh.setColorDepth(8);
+  spriteHigh.createSprite(320, 240);
+  spriteHigh.fillRect(0, 0, 320, 240, TFT_GREY);
+  spriteHigh.fillRect(3, 3, 314, 234, bckColor);
 
-  drawSegment(320, 305, 285, 61, 300, TFT_BLUE, true, true);
-  drawSegment(0, 305, 14, 61, 300, TFT_BLUE, false, true);
+  drawSegment(320, 305, 285, 61, 300, TFT_BLUE, true, true, true);
+  drawSegment(0, 305, 14, 61, 300, TFT_BLUE, true, false, true);
 
   // 4% 1:1.5
   Serial.println("SWRLine 1:1.5");
@@ -333,8 +382,8 @@ void createSprite(){
   drawSWRLine(25, 1, TFT_GREEN, 0);
   drawSWRLine(125, 5, TFT_GREEN, 1);
   drawSWRLine(250, 10, TFT_GREEN, 0);  
-  sprite.setTextColor(TFT_GREEN, bckColor);
-  sprite.drawCentreString("1:1.5", aPos.x+6, aPos.y+33, 1);
+  spriteHigh.setTextColor(TFT_GREEN, bckColor);
+  spriteHigh.drawCentreString("1:1.5", aPos.x+6, aPos.y+33, 1);
 
 
   // 11% 1:2
@@ -343,8 +392,8 @@ void createSprite(){
   drawSWRLine(9, 1, TFT_GREEN, 0);
   drawSWRLine(100, 11, TFT_GREEN, 1);
   drawSWRLine(163, 18, TFT_GREEN, 0);  
-  sprite.setTextColor(TFT_GREEN, bckColor);
-  sprite.drawCentreString("1:2", aPos.x+5, aPos.y+20, 1);  
+  spriteHigh.setTextColor(TFT_GREEN, bckColor);
+  spriteHigh.drawCentreString("1:2", aPos.x+5, aPos.y+20, 1);  
 
   // 18, 5% 1:2.5
   Serial.println("SWRLine 1:2");
@@ -354,8 +403,8 @@ void createSprite(){
   drawSWRLine(60, 11, TFT_GREEN, 0);   
   drawSWRLine(85, 16, TFT_GREEN, 0);  
   drawSWRLine(130, 24, TFT_GREEN, 0);   
-  sprite.setTextColor(TFT_GREEN, bckColor);
-  sprite.drawCentreString("1:2.5", aPos.x+5, aPos.y+15, 1); 
+  spriteHigh.setTextColor(TFT_GREEN, bckColor);
+  spriteHigh.drawCentreString("1:2.5", aPos.x+5, aPos.y+15, 1); 
  
   // 25% 1:3
   Serial.println("SWRLine 1:3");
@@ -364,8 +413,8 @@ void createSprite(){
   drawSWRLine(20, 5, TFT_RED, 1);
   drawSWRLine(40, 10, TFT_RED, 0);
   drawSWRLine(120, 30, TFT_RED, 0);
-  sprite.setTextColor(TFT_RED, bckColor);
-  sprite.drawCentreString("1:3", aPos.x+1, aPos.y+15, 1);  
+  spriteHigh.setTextColor(TFT_RED, bckColor);
+  spriteHigh.drawCentreString("1:3", aPos.x+1, aPos.y+15, 1);  
 
   // 36% 1:4
   Serial.println("SWRLine 1:4"); 
@@ -376,8 +425,8 @@ void createSprite(){
   drawSWRLine(25, 9, TFT_RED, 0);
   drawSWRLine(100, 36, TFT_RED, 0);
   drawSWRLine(105, 38, TFT_RED, 0);  
-  sprite.setTextColor(TFT_RED, bckColor);
-  sprite.drawCentreString("1:4", aPos.x+1, aPos.y+15, 1);   
+  spriteHigh.setTextColor(TFT_RED, bckColor);
+  spriteHigh.drawCentreString("1:4", aPos.x+1, aPos.y+15, 1);   
 
   // 50%  1:6
   Serial.println("SWRLine 1:6"); 
@@ -386,8 +435,8 @@ void createSprite(){
   drawSWRLine(30, 15, TFT_RED, 1);
   drawSWRLine(60, 30, TFT_RED, 0);  
   drawSWRLine(85, 42, TFT_RED, 0);  
-  sprite.setTextColor(TFT_RED, bckColor);
-  sprite.drawCentreString("1:6", aPos.x+3, aPos.y+15, 1);
+  spriteHigh.setTextColor(TFT_RED, bckColor);
+  spriteHigh.drawCentreString("1:6", aPos.x+3, aPos.y+15, 1);
 
   // 70%  1:10
   Serial.println("SWRLine 1:6"); 
@@ -397,30 +446,64 @@ void createSprite(){
   drawSWRLine(25, 18, TFT_RED, 0);
   drawSWRLine(40, 28, TFT_RED, 0);    
   drawSWRLine(70, 49, TFT_RED, 0);   
-  sprite.setTextColor(TFT_RED, bckColor);
-  sprite.drawCentreString("1:10", aPos.x+5, aPos.y+15, 1);
+  spriteHigh.setTextColor(TFT_RED, bckColor);
+  spriteHigh.drawCentreString("1:10", aPos.x+5, aPos.y+15, 1);
 
-  sprite.setTextColor(TFT_GREY, bckColor);  
-  sprite.drawCentreString("POWER/SWR METER", 160, 208, 4);
-  sprite.fillRect(0, 230, 320, 10, TFT_GREY);
-  sprite.drawCircle(40, 235, 4, txtColor);
-  sprite.drawLine(38, 233, 42, 237, txtColor);
-  sprite.drawCircle(280, 235, 4, txtColor);
-  sprite.drawLine(278, 233, 282, 237, txtColor);    
-  sprite.fillRect(60, 230, 200, 10, TFT_GREY);
-  sprite.setTextColor(txtColor, TFT_GREY);  
-  sprite.drawCentreString("by PI4RAZ", 160, 232, 1);
-  sprite.drawRect(9, 27, 87, 45, TFT_GREY);
-  sprite.drawRect(224, 27, 87, 45, TFT_GREY);   
-  sprite.drawRect(10, 28, 85, 43, TFT_GREY);
-  sprite.drawRect(225, 28, 85, 43, TFT_GREY);  
-  sprite.setTextColor(TFT_GREEN, bckColor);
-  sprite.drawString(" FWD ", 20, 20, 2);    
-  sprite.setTextColor(TFT_RED, bckColor);   
-  sprite.drawString(" REF ", 235, 20, 2);
-  sprite.setTextColor(txtColor, bckColor);  
-  sprite.drawString("PWR : ", 15, 37, 2);     
-  sprite.drawString("PEAK: ", 15, 52, 2); 
-  sprite.drawString("PWR : ", 230, 37, 2); 
-  sprite.drawString("SWR : ", 230, 52, 2);  
+  spriteHigh.setTextColor(TFT_GREY, bckColor);  
+  spriteHigh.drawCentreString("POWER/SWR METER", 160, 208, 4);
+  spriteHigh.fillRect(0, 230, 320, 10, TFT_GREY);
+  spriteHigh.drawCircle(40, 235, 4, txtColor);
+  spriteHigh.drawLine(38, 233, 42, 237, txtColor);
+  spriteHigh.drawCircle(280, 235, 4, txtColor);
+  spriteHigh.drawLine(278, 233, 282, 237, txtColor);    
+  spriteHigh.fillRect(60, 230, 200, 10, TFT_GREY);
+  spriteHigh.setTextColor(txtColor, TFT_GREY);  
+  spriteHigh.drawCentreString("by PI4RAZ", 160, 232, 1);
+  spriteHigh.drawRect(9, 27, 87, 45, TFT_GREY);
+  spriteHigh.drawRect(224, 27, 87, 45, TFT_GREY);   
+  spriteHigh.drawRect(10, 28, 85, 43, TFT_GREY);
+  spriteHigh.drawRect(225, 28, 85, 43, TFT_GREY);  
+  spriteHigh.setTextColor(TFT_GREEN, bckColor);
+  spriteHigh.drawString(" FWD ", 20, 20, 2);    
+  spriteHigh.setTextColor(TFT_RED, bckColor);   
+  spriteHigh.drawString(" REF ", 235, 20, 2);
+  spriteHigh.setTextColor(txtColor, bckColor);  
+  spriteHigh.drawString("PWR : ", 15, 37, 2);     
+  spriteHigh.drawString("PEAK: ", 15, 52, 2); 
+  spriteHigh.drawString("PWR : ", 230, 37, 2); 
+  spriteHigh.drawString("SWR : ", 230, 52, 2);  
+}
+
+void createspriteLow(){
+  spriteLow.setColorDepth(8);
+  spriteLow.createSprite(320, 240);
+  spriteLow.fillRect(0, 0, 320, 240, TFT_GREY);
+  spriteLow.fillRect(3, 3, 314, 234, bckColor);
+
+  drawSegment(320, 305, 285, 61, 300, TFT_BLUE, false, true, true);
+  drawSegment(0, 305, 14, 61, 300, TFT_BLUE, false, false, true);
+
+  spriteLow.setTextColor(TFT_GREY, bckColor);  
+  spriteLow.drawCentreString("POWER/SWR METER", 160, 208, 4);
+  spriteLow.fillRect(0, 230, 320, 10, TFT_GREY);
+  spriteLow.drawCircle(40, 235, 4, txtColor);
+  spriteLow.drawLine(38, 233, 42, 237, txtColor);
+  spriteLow.drawCircle(280, 235, 4, txtColor);
+  spriteLow.drawLine(278, 233, 282, 237, txtColor);    
+  spriteLow.fillRect(60, 230, 200, 10, TFT_GREY);
+  spriteLow.setTextColor(txtColor, TFT_GREY);  
+  spriteLow.drawCentreString("by PI4RAZ", 160, 232, 1);
+  spriteLow.drawRect(9, 27, 87, 45, TFT_GREY);
+  spriteLow.drawRect(224, 27, 87, 45, TFT_GREY);   
+  spriteLow.drawRect(10, 28, 85, 43, TFT_GREY);
+  spriteLow.drawRect(225, 28, 85, 43, TFT_GREY);  
+  spriteLow.setTextColor(TFT_GREEN, bckColor);
+  spriteLow.drawString(" FWD ", 20, 20, 2);    
+  spriteLow.setTextColor(TFT_RED, bckColor);   
+  spriteLow.drawString(" REF ", 235, 20, 2);
+  spriteLow.setTextColor(txtColor, bckColor);  
+  spriteLow.drawString("PWR : ", 15, 37, 2);     
+  spriteLow.drawString("PEAK: ", 15, 52, 2); 
+  spriteLow.drawString("PWR : ", 230, 37, 2); 
+  spriteLow.drawString("SWR : ", 230, 52, 2);  
 }
