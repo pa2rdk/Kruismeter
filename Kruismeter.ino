@@ -1,3 +1,4 @@
+// V1.2 2024/08/15  More decent SWR lines
 // V1.1 2024/06/21  Dual scale
 // V1.0 2024/06/10  Initial number
 
@@ -380,74 +381,74 @@ void createspriteHigh(){
   Serial.println("SWRLine 1:1.5");
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   drawSWRLine(25, 1, TFT_GREEN, 0);
-  drawSWRLine(125, 5, TFT_GREEN, 1);
-  drawSWRLine(250, 10, TFT_GREEN, 0);  
+  // drawSWRLine(125, 5, TFT_GREEN, 1);
+  drawSWRLine(250, 10, TFT_GREEN, 1);  
   spriteHigh.setTextColor(TFT_GREEN, bckColor);
-  spriteHigh.drawCentreString("1:1.5", aPos.x+6, aPos.y+33, 1);
+  spriteHigh.drawCentreString("1:1.5", aPos.x+1, aPos.y+33, 1);
 
 
   // 11% 1:2
   Serial.println("SWRLine 1:2");
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   drawSWRLine(9, 1, TFT_GREEN, 0);
-  drawSWRLine(100, 11, TFT_GREEN, 1);
-  drawSWRLine(163, 18, TFT_GREEN, 0);  
+  // drawSWRLine(100, 11, TFT_GREEN, 1);
+  drawSWRLine(163, 18, TFT_GREEN, 1);  
   spriteHigh.setTextColor(TFT_GREEN, bckColor);
-  spriteHigh.drawCentreString("1:2", aPos.x+5, aPos.y+20, 1);  
+  spriteHigh.drawCentreString("1:2", aPos.x+1, aPos.y+20, 1);  
 
   // 18, 5% 1:2.5
-  Serial.println("SWRLine 1:2");
+  Serial.println("SWRLine 1:2.5");
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   drawSWRLine(5, 1, TFT_GREEN, 0);
-  drawSWRLine(40, 7, TFT_GREEN, 1);
-  drawSWRLine(60, 11, TFT_GREEN, 0);   
-  drawSWRLine(85, 16, TFT_GREEN, 0);  
-  drawSWRLine(130, 24, TFT_GREEN, 0);   
+  // drawSWRLine(40, 7, TFT_GREEN, 1);
+  // drawSWRLine(60, 11, TFT_GREEN, 0);   
+  // drawSWRLine(85, 16, TFT_GREEN, 0);  
+  drawSWRLine(130, 24, TFT_GREEN, 1);   
   spriteHigh.setTextColor(TFT_GREEN, bckColor);
-  spriteHigh.drawCentreString("1:2.5", aPos.x+5, aPos.y+15, 1); 
+  spriteHigh.drawCentreString("1:2.5", aPos.x+6, aPos.y+15, 1); 
  
   // 25% 1:3
   Serial.println("SWRLine 1:3");
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   drawSWRLine(4, 1, TFT_RED, 0);
-  drawSWRLine(20, 5, TFT_RED, 1);
-  drawSWRLine(40, 10, TFT_RED, 0);
-  drawSWRLine(120, 30, TFT_RED, 0);
+  // drawSWRLine(20, 5, TFT_RED, 1);
+  // drawSWRLine(40, 10, TFT_RED, 0);
+  drawSWRLine(120, 30, TFT_RED, 1);
   spriteHigh.setTextColor(TFT_RED, bckColor);
   spriteHigh.drawCentreString("1:3", aPos.x+1, aPos.y+15, 1);  
 
   // 36% 1:4
   Serial.println("SWRLine 1:4"); 
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  drawSWRLine(3, 1, TFT_RED, 0);  
-  drawSWRLine(5, 2, TFT_RED, 1);   
-  drawSWRLine(11, 4, TFT_RED, 0);
-  drawSWRLine(25, 9, TFT_RED, 0);
-  drawSWRLine(100, 36, TFT_RED, 0);
-  drawSWRLine(105, 38, TFT_RED, 0);  
+  //drawSWRLine(3, 1, TFT_RED, 0);  
+  drawSWRLine(9, 3, TFT_RED, 0);   
+  // drawSWRLine(11, 4, TFT_RED, 0);
+  // drawSWRLine(25, 9, TFT_RED, 0);
+  // drawSWRLine(100, 36, TFT_RED, 0);
+  drawSWRLine(105, 38, TFT_RED, 1);  
   spriteHigh.setTextColor(TFT_RED, bckColor);
   spriteHigh.drawCentreString("1:4", aPos.x+1, aPos.y+15, 1);   
 
   // 50%  1:6
   Serial.println("SWRLine 1:6"); 
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  drawSWRLine(2, 1, TFT_RED, 0);
-  drawSWRLine(30, 15, TFT_RED, 1);
-  drawSWRLine(60, 30, TFT_RED, 0);  
-  drawSWRLine(85, 42, TFT_RED, 0);  
+  drawSWRLine(8, 4, TFT_RED, 0);
+  // drawSWRLine(30, 15, TFT_RED, 1);
+  // drawSWRLine(60, 30, TFT_RED, 0);  
+  drawSWRLine(85, 42, TFT_RED, 1);  
   spriteHigh.setTextColor(TFT_RED, bckColor);
   spriteHigh.drawCentreString("1:6", aPos.x+3, aPos.y+15, 1);
 
   // 70%  1:10
   Serial.println("SWRLine 1:6"); 
-  aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};  
   drawSWRLine(4, 3, TFT_RED, 0);
-  drawSWRLine(10, 7, TFT_RED, 1);  
-  drawSWRLine(25, 18, TFT_RED, 0);
-  drawSWRLine(40, 28, TFT_RED, 0);    
-  drawSWRLine(70, 49, TFT_RED, 0);   
+  // drawSWRLine(10, 7, TFT_RED, 1);  
+  // drawSWRLine(25, 18, TFT_RED, 0);
+  // drawSWRLine(40, 28, TFT_RED, 0);    
+  drawSWRLine(70, 49, TFT_RED, 1);   
   spriteHigh.setTextColor(TFT_RED, bckColor);
-  spriteHigh.drawCentreString("1:10", aPos.x+5, aPos.y+15, 1);
+  spriteHigh.drawCentreString("1:10", aPos.x+6, aPos.y+15, 1);
 
   spriteHigh.setTextColor(TFT_GREY, bckColor);  
   spriteHigh.drawCentreString("POWER/SWR METER", 160, 208, 4);
