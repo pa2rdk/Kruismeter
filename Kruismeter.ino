@@ -1,3 +1,5 @@
+
+// V1.3 2024/11/01  Lookup pwr for a lineair behaviour
 // V1.2 2024/08/15  More decent SWR lines
 // V1.1 2024/06/21  Dual scale
 // V1.0 2024/06/10  Initial number
@@ -46,6 +48,9 @@ bool shwRefLow[] = {1, 1,  1,  1,  1,  1,  1,  1,  1,  1};
 int fwdList[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 int refList[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+int pwrMeasured[] = {0,126,260,363,448,507,578,638,703,770,822,865,912,959,1000,1052,1100,1145,1187,1232,1272,2544,3816};
+int pwrValue[] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,200,300};
+
 int bckColor = TFT_BLACK;
 int txtColor = TFT_WHITE;
 int needleColor = TFT_YELLOW;
@@ -54,6 +59,7 @@ int lastRef = 0;
 int peakFwd = 0;
 long peakTime = millis();
 long lastHigh = millis();
+long lastMeasured = millis();
 //uint16_t* tft_buffer;
 
 typedef struct {  // Frequency parts
@@ -104,6 +110,8 @@ void setup(void) {
   analogReadResolution(12);
 }
 
+// int total = 0;
+// int teller = 0;
 void loop() {
     int fwd = analogRead(fwdPin);
     int ref = analogRead(refPin);    
@@ -112,15 +120,26 @@ void loop() {
     // int fwd =analogReadMilliVolts(fwdPin)-128;
     // int ref = analogReadMilliVolts(refPin)-128;
     // ref /=3;
-    Serial.printf("Fwd:%d - Ref:%d\r\n",fwd,ref);
+    // Serial.printf("Fwd:%d - Ref:%d\r\n",fwd,ref);
+    // total+=fwd;
+    // teller++;
+    // if (teller==100){
+    //   Serial.printf("Fwd:%d\r\n",total/100);
+    //   teller = 0;
+    //   total = 0;
+    // }
+      
     fwd = calcAverage(true, fwd);
     ref = calcAverage(false, ref);    
     DrawMeter(fwd, ref, (fwd>25 || ref>8));
     delay(10);
+
 }
 
 int calcAverage(bool forward, int measure){
-  measure /=13;
+  Serial.printf("Measured = %d - ", measure);
+  measure = lookupPwr(measure);
+  Serial.printf("Calculated Pwr = %d\r\n", measure);
   int retVal = 0;
   if (forward){
       for (int x = 0; x<9; x++) fwdList[x] = fwdList[x + 1];
@@ -149,7 +168,7 @@ void DrawMeter(int fwd, int ref, bool isHigh){
     peakTime = millis();
     peakChanged = true;
   }
-  Serial.printf("fwd = %d (%d), ref = %d (%d), peak = %d (%d, %d)\r\n", fwd, lastFwd, ref, lastRef , fwd, peakFwd, peakChanged);
+  //Serial.printf("fwd = %d (%d), ref = %d (%d), peak = %d (%d, %d)\r\n", fwd, lastFwd, ref, lastRef , fwd, peakFwd, peakChanged);
 
   if (fwd>lastFwd+1 || fwd<lastFwd-1|| ref>lastRef+1 || ref<lastRef-1 || peakChanged){
     Serial.print(".");
@@ -172,7 +191,7 @@ void DrawMeter(int fwd, int ref, bool isHigh){
     tft.setTextColor(color, bckColor);
     tft.drawString("SWR : " + String(swr), 230, 52, 2);        
 
-    if (fwd!=0) Serial.printf("fwd = %d, ref = %d, delen = %f, sqrt = %d, swr = %f\r\n", fwd, ref, ref/float(fwd), sqrt(ref/float(fwd)), swr);
+    //if (fwd!=0) Serial.printf("fwd = %d, ref = %d, delen = %f, sqrt = %d, swr = %f\r\n", fwd, ref, ref/float(fwd), sqrt(ref/float(fwd)), swr);
     if (fwd!=0) tft.drawCentreString(String(int(round(ref*100/fwd))) + "% reflected power", 160, 192, 2);
     tft.setTextColor(txtColor, bckColor);
   }
@@ -264,6 +283,29 @@ int lookUpDeg(int deg[], int val[], int elements, int measure){
     if (pos2-pos != 0) retDeg = (((measure-pos2)/float(pos-pos2))*(dgr-dgr2))+dgr2;
   }
   return int(round(retDeg));
+}
+
+int lookupPwr(int measured){
+  int elements = sizeof(pwrMeasured) / sizeof(pwrMeasured[0]);
+  int prevPwrValue = 0;
+  int prevPwrMeasured = 0;  
+  int nextPwrValue = 0;
+  int nextPwrMeasured = 0;
+  for (int i = 0; i<elements; i++) {
+
+    if (measured>=pwrMeasured[i]){
+      prevPwrValue = pwrValue[i];
+      prevPwrMeasured = pwrMeasured[i]; 
+    } else {
+      nextPwrValue = pwrValue[i];
+      nextPwrMeasured = pwrMeasured[i];
+      float scale = float(measured-prevPwrMeasured)/float(nextPwrMeasured-prevPwrMeasured);
+      int pwr = ((nextPwrValue-prevPwrValue)*scale)+prevPwrValue;
+      return pwr;
+    }
+  }
+  return 0;
+
 }
 
 int drawSegment(int x, int y, int start_angle, int sub_angle, int r, unsigned int color, bool isHigh, bool forward, bool withValues){
