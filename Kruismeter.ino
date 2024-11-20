@@ -17,18 +17,6 @@ TFT_eSprite spriteLow  = TFT_eSprite(&tft);
 #define fwdPin  26
 #define refPin  27
 
-// int deg500[]  = {0, 3, 7, 11, 13, 16, 17, 19, 20, 21, 22, 26, 29, 33, 36, 38, 40, 41, 42, 43, 44, 47, 48, 50, 51, 53, 55, 57, 58, 60};
-// int val500[]  = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, 125, 150, 175, 200, 250, 300, 350, 400, 500};
-// bool shw500[] = {1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1,  0,  0,  0,  1,  0,  1,  0,  1, 1};
-
-// int degFwd[]  = {0, 3, 7, 12, 15, 17, 19, 20, 22, 23, 24, 28, 32, 36, 39, 41, 43, 45, 46, 47, 48, 51, 53, 54, 56, 58, 60};
-// int valFwd[]  = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, 125, 150, 175, 200, 250, 300};
-// bool shwFwd[] = {1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0,  1,  0,  1,  0,  1,  0,  1};
-
-// int degRef[]  = {0, 5, 9, 14, 18, 21, 23, 25, 27, 29, 30, 35, 39, 44, 48, 51, 55, 57, 59, 60};
-// int valRef[]  = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 70, 80, 90, 100};
-// bool shwRef[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1};
-
 int degFwd[]  = {0, 3, 5,  7,  9,  11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41,  43,  45,  47,  48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60};
 int valFwd[]  = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 240, 260, 280, 300};
 bool shwFwd[] = {1, 1, 1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,   0,   0,   0,   0,   1,   0,   0,   0,   0,   1,   0,   0,   0,   0,   0,   1};
@@ -115,19 +103,6 @@ void setup(void) {
 void loop() {
     int fwd = analogRead(fwdPin);
     int ref = analogRead(refPin);    
-    // int fwd = analogRead(fwdPin)*3300/4095;
-    // int ref = analogRead(refPin)*3300/4095; 
-    // int fwd =analogReadMilliVolts(fwdPin)-128;
-    // int ref = analogReadMilliVolts(refPin)-128;
-    // ref /=3;
-    // Serial.printf("Fwd:%d - Ref:%d\r\n",fwd,ref);
-    // total+=fwd;
-    // teller++;
-    // if (teller==100){
-    //   Serial.printf("Fwd:%d\r\n",total/100);
-    //   teller = 0;
-    //   total = 0;
-    // }
       
     fwd = calcAverage(true, fwd);
     ref = calcAverage(false, ref);    
@@ -423,7 +398,6 @@ void createspriteHigh(){
   Serial.println("SWRLine 1:1.5");
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   drawSWRLine(25, 1, TFT_GREEN, 0);
-  // drawSWRLine(125, 5, TFT_GREEN, 1);
   drawSWRLine(250, 10, TFT_GREEN, 1);  
   spriteHigh.setTextColor(TFT_GREEN, bckColor);
   spriteHigh.drawCentreString("1:1.5", aPos.x+1, aPos.y+33, 1);
@@ -433,7 +407,6 @@ void createspriteHigh(){
   Serial.println("SWRLine 1:2");
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   drawSWRLine(9, 1, TFT_GREEN, 0);
-  // drawSWRLine(100, 11, TFT_GREEN, 1);
   drawSWRLine(163, 18, TFT_GREEN, 1);  
   spriteHigh.setTextColor(TFT_GREEN, bckColor);
   spriteHigh.drawCentreString("1:2", aPos.x+1, aPos.y+20, 1);  
@@ -441,10 +414,7 @@ void createspriteHigh(){
   // 18, 5% 1:2.5
   Serial.println("SWRLine 1:2.5");
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  drawSWRLine(5, 1, TFT_GREEN, 0);
-  // drawSWRLine(40, 7, TFT_GREEN, 1);
-  // drawSWRLine(60, 11, TFT_GREEN, 0);   
-  // drawSWRLine(85, 16, TFT_GREEN, 0);  
+  drawSWRLine(5, 1, TFT_GREEN, 0); 
   drawSWRLine(130, 24, TFT_GREEN, 1);   
   spriteHigh.setTextColor(TFT_GREEN, bckColor);
   spriteHigh.drawCentreString("1:2.5", aPos.x+6, aPos.y+15, 1); 
@@ -453,20 +423,14 @@ void createspriteHigh(){
   Serial.println("SWRLine 1:3");
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   drawSWRLine(4, 1, TFT_RED, 0);
-  // drawSWRLine(20, 5, TFT_RED, 1);
-  // drawSWRLine(40, 10, TFT_RED, 0);
   drawSWRLine(120, 30, TFT_RED, 1);
   spriteHigh.setTextColor(TFT_RED, bckColor);
   spriteHigh.drawCentreString("1:3", aPos.x+1, aPos.y+15, 1);  
 
   // 36% 1:4
   Serial.println("SWRLine 1:4"); 
-  aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  //drawSWRLine(3, 1, TFT_RED, 0);  
+  aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; 
   drawSWRLine(9, 3, TFT_RED, 0);   
-  // drawSWRLine(11, 4, TFT_RED, 0);
-  // drawSWRLine(25, 9, TFT_RED, 0);
-  // drawSWRLine(100, 36, TFT_RED, 0);
   drawSWRLine(105, 38, TFT_RED, 1);  
   spriteHigh.setTextColor(TFT_RED, bckColor);
   spriteHigh.drawCentreString("1:4", aPos.x+1, aPos.y+15, 1);   
@@ -474,9 +438,7 @@ void createspriteHigh(){
   // 50%  1:6
   Serial.println("SWRLine 1:6"); 
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  drawSWRLine(8, 4, TFT_RED, 0);
-  // drawSWRLine(30, 15, TFT_RED, 1);
-  // drawSWRLine(60, 30, TFT_RED, 0);  
+  drawSWRLine(8, 4, TFT_RED, 0);  
   drawSWRLine(85, 42, TFT_RED, 1);  
   spriteHigh.setTextColor(TFT_RED, bckColor);
   spriteHigh.drawCentreString("1:6", aPos.x+3, aPos.y+15, 1);
@@ -484,10 +446,7 @@ void createspriteHigh(){
   // 70%  1:10
   Serial.println("SWRLine 1:6"); 
   aPos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};  
-  drawSWRLine(4, 3, TFT_RED, 0);
-  // drawSWRLine(10, 7, TFT_RED, 1);  
-  // drawSWRLine(25, 18, TFT_RED, 0);
-  // drawSWRLine(40, 28, TFT_RED, 0);    
+  drawSWRLine(4, 3, TFT_RED, 0);    
   drawSWRLine(70, 49, TFT_RED, 1);   
   spriteHigh.setTextColor(TFT_RED, bckColor);
   spriteHigh.drawCentreString("1:10", aPos.x+6, aPos.y+15, 1);
